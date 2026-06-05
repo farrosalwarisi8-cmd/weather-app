@@ -1,51 +1,34 @@
 import { CloudRain } from "lucide-react";
-import axios from "axios";
-import { useRef, useState, useEffect } from "react";
-
- const API_KEY = "bafdca1dbccc4a399c671305262505";
+import { useState, useEffect } from "react";
+import { getData } from "../utils/api";
 
 function App() {
   // variabel nama kota yang akan dicari datanya, defaultnya adalah London
   const [city, setCity] = useState("london");
   // menyimpan data cuaca yang didapat dari API
   const [weatherData, setWeatherData] = useState(null);
- // variable input untuk menyimpan nilai input dari user, defaultnya adalah nilai dari variable city
+  // variable input untuk menyimpan nilai input dari user, defaultnya adalah nilai dari variable city
   const [input, setInput] = useState(city);
-   // mengindari pemanggilan API yang berulang-ulang saat komponen di-render ulang
-  const isFetched = useRef(false);
   // variabel eror
   const [error, setError] = useState(null);
- 
-  
-  
+
   useEffect(() => {
-    // jika data sudah di-fetch, jangan lakukan apa-apa
-    if (isFetched.current) return;
-    // fungsi untuk mengambil data cuaca dari API
-    const getData = async () => {
-    try {
-      
-      const response = await axios.get(
-        `http://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${city}&aqi=no`
-      );
-      console.log(response.data);
-      // set variabel weatherData dengan data yang didapat dari API
-      setWeatherData(response.data);
-      setError(null)
-    }catch (error) {
-      setError(error); 
-      console.error(error.message)
-  }
-};
-    // untuk menghindari pemanggilan API yang berulang-ulang saat komponen di-render ulang, kita set isFetched.current menjadi true setelah memanggil fungsi getData
-    isFetched.current = true;
-    // mendapatkan data cuaca dari API
-    getData();
+    // fungsi untuk mengambil data cuaca dari API setiap kali kota berubah
+    const fetchWeatherData = async () => {
+      try {
+        setError(null);
+        const data = await getData(city);
+        setWeatherData(data);
+      } catch (error) {
+        setError(error);
+      }
+    };
 
-}, [city]);
+    fetchWeatherData();
+  }, [city]);
 
-
-  if (error) return <main>Error: {error}</main>;
+  // tampilkan pesan error jika fetch gagal
+  if (error) return <main>Error: {error.message || String(error)}</main>;
   if (!weatherData) return <main>Loading...</main>;
 
       
@@ -64,11 +47,7 @@ function App() {
 
             >
             </input>
-            <button onClick={
-              () => {
-                isFetched.current = false; 
-                setCity(input)
-            }}>Search</button>
+            <button onClick={() => setCity(input)}>Search</button>
           </div>
           <div className="flex flex-col">
             <p className="text-white text-8xl flex items-center justify-center">
